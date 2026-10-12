@@ -1,65 +1,142 @@
-# PORTER IA
+# Interactive Porter Five Forces Dashboard
 
-## Porter IA · Arquetipo sistémico
+A professional, reusable competitive analysis template. Customize one client file, open the dashboard and deliver the source. The included **NOVA DIGITAL / Digital Services** case is an illustrative demo.
 
-Página web interactiva sobre las cinco fuerzas de Porter aplicada a plataformas y servicios de inteligencia artificial generativa. Conecta el análisis competitivo con una adaptación del arquetipo **límites al crecimiento**.
+**HTML · CSS · Vanilla JavaScript · No dependencies · Responsive · Offline compatible**
 
-**[Abrir la visualización web](https://porter-ia-rodrix.rodrigonicolasbravoz.chatgpt.site)** · **[Repositorio público](https://github.com/Rodrix836/Avance-2-de-tic)**
+## Features
 
-El enlace de la visualización alojada puede requerir la sesión de su propietario. El código público puede descargarse y ejecutarse localmente sin cuentas ni claves.
+- Company cover with name, sector, country, date, optional logo and an Explore Analysis button.
+- Interactive Five Forces map with intensity, description, Key Drivers and Strategic Impact.
+- Executive Summary: overall pressure, strongest force, main risk, opportunity and strategic priority.
+- Three to five concise Strategic Recommendations.
+- System Dynamics: preserved interactive SVG feedback loops **R1 Innovation**, **B1 Capacity**, **B2 Competition**, with signs, delays, assumptions and connections to Porter.
+- Export / Print Report: includes all five force details and all three cycles, regardless of the selected screen.
+- Native keyboard controls, visible focus, selection states, live detail announcements and reduced-motion support.
+- No backend, accounts, API keys, external fonts, packages or build step.
 
-### Qué puedes explorar
+## Run locally
 
-- **Mapa de fuerzas:** selecciona rivalidad, entrantes, proveedores, clientes o sustitutos para leer sus factores e implicaciones.
-- **Arquetipo sistémico:** recorre los ciclos R1 de innovación, B1 de capacidad y B2 de competencia. Cada flecha muestra su signo y las demoras relevantes.
-- **Síntesis y fuentes:** lectura para exposición, alcance del modelo y enlaces a las fuentes consultadas.
+Download the repository using **Code → Download ZIP** and extract it. Open **`index.html`**, or open **`dist/index.html`** directly in a current browser. Both work through `file://`; no server, Node or npm is required.
 
-### Abrir en tu computadora
+The app makes no external runtime requests by default. Source links need internet when opened. For completely offline client deliveries, keep logos in `dist/assets/` instead of using remote image URLs.
 
-1. Descarga el repositorio con **Code → Download ZIP** y descomprímelo, o clónalo.
-2. Abre **`dist/index.html`** con tu navegador.
-3. No necesitas instalar dependencias. La navegación y los diagramas funcionan sin servidor.
+## Quick Customization
 
-También puedes servirlo con Python:
-
-```bash
-python -m http.server 8000 --directory dist
+```text
+1. Open dist/config.js
+2. Change company information
+3. Update the Five Forces content
+4. Change branding colors
+5. Open index.html
 ```
 
-Después abre `http://localhost:8000`. Las fuentes tipográficas usan Google Fonts; sin conexión se utiliza la fuente local de respaldo. La consulta de fuentes bibliográficas requiere Internet.
+Save a copy of the project per client. Edit only **`dist/config.js`** for normal personalization:
 
-### Estructura
+| Configuration | What to change |
+| --- | --- |
+| `company` | Name, industry, country, date, description and logo path |
+| `branding` | Primary, secondary, background, surface, text and muted colors |
+| `forces` | Titles, levels, short card text, descriptions, drivers and strategic impact |
+| `executiveSummary` | Overall pressure, strongest force, main risk, opportunity and priority |
+| `recommendations` | 3–5 objects with `title` and `description` |
+| `dynamics` | Intro, intervention and each cycle's content and assumptions |
+| `methodology` | Scope, client-specific caveats and source links |
 
-| Archivo | Función |
-|---|---|
-| `dist/index.html` | Contenido, navegación, mapa de Porter y fuentes. |
-| `dist/styles.css` | Diseño adaptable a computadoras y celulares. |
-| `dist/app.js` | Datos del caso, selección de fuerzas y diagramas SVG causales. |
-| `dist/favicon.svg` | Ícono del sitio. |
-| `index.html` | Entrada alternativa que abre `dist/index.html`. |
+Use plain text, not HTML. Keep JavaScript quotes and commas intact. Prefer short card titles and examples; put longer explanations in `description` and `drivers`. Intensity labels and the executive summary are editorial assessments, **not calculated scores**: update both when the case changes. The demo explicitly acknowledges a tie between rivalry and buyer power.
 
-HTML, CSS y JavaScript nativo. Sin base de datos, cuentas de usuario, llamadas a modelos de IA ni claves API.
+### Change colors
 
-### Modelo conceptual
+Use six-digit hex values in `branding`, for example:
 
-Las cinco fuerzas de Porter son un marco de estructura competitiva. El arquetipo sistémico es una representación de retroalimentación. La aplicación los vincula, sin presentarlos como si fueran el mismo modelo.
+```js
+primaryColor: '#ee572b',
+secondaryColor: '#176c59',
+backgroundColor: '#f5f7f8',
+surfaceColor: '#ffffff',
+textColor: '#202428',
+mutedColor: '#626970',
+```
 
-| Ciclo | Secuencia causal | Tipo |
-|---|---|---|
-| R1 | Adopción → ingresos → reinversión → valor percibido → adopción. Todas las relaciones son positivas. | Refuerzo |
-| B1 | Adopción → carga → saturación → calidad → adopción. Saturación → calidad es negativa. | Equilibrio |
-| B2 | Adopción → atractivo del mercado → presión competitiva → margen reinvertible → valor relativo → adopción. Presión → margen es negativa. | Equilibrio |
+The app updates CSS variables and derives related tints. Text on the solid primary fill automatically switches between light and dark. Check contrast after changing other foreground/background combinations. Layout and generic interface labels live in `dist/styles.css` and `dist/index.html`; normal client data does not require edits there.
 
-**Lectura de signos:** `+` significa que, manteniendo lo demás constante, la variable destino cambia en la misma dirección; `−` indica dirección opuesta. No significan bueno o malo. `∥` indica demora. R y B describen la polaridad del ciclo, no garantizan crecimiento o estabilidad en cualquier situación.
+### Modify the Five Forces
 
-**Supuestos:** R1 considera monetización, margen positivo y reinversión efectiva. B1 considera capacidad fija a corto plazo. B2 usa la adopción de un servicio como señal del crecimiento de su segmento y agrupa varias presiones; es una simplificación. La presión competitiva puede limitar el margen incluso con demanda creciente.
+Keep these keys unchanged; they connect map positions and related cycles:
 
-Las calificaciones Alta, Media-alta y Media son valoraciones didácticas del caso. Los ciclos son hipótesis, no relaciones empíricamente estimadas. No se calcula un índice numérico ni se realiza una simulación calibrada.
+| Key | Force |
+| --- | --- |
+| `rivalidad` | Competitive Rivalry |
+| `entrantes` | Threat of New Entrants |
+| `proveedores` | Supplier Power |
+| `clientes` | Buyer Power |
+| `sustitutos` | Threat of Substitutes |
 
-### Fuentes
+Edit `level`, `description`, `drivers` and `impact`. `subtitle` and `example` are short map labels. `loop` points to `r1`, `b1` or `b2`; `connection` labels that button. `mechanism` and `relationship` populate the Porter-to-system table. All five forces remain available in the printed report.
 
-1. Harvard Business School, Institute for Strategy and Competitiveness. [The Five Forces](https://www.isc.hbs.edu/strategy/business-strategy/Pages/the-five-forces.aspx).
-2. Daniel H. Kim, The Systems Thinker. [Using “Limits to Success” as a Planning Tool](https://thesystemsthinker.com/using-limits-to-success-as-a-planning-tool/).
-3. Stanford HAI. [AI Index 2026: Research and Development](https://hai.stanford.edu/ai-index/2026-ai-index-report/research-and-development).
+### Add a logo
 
-Consulta: 11 de septiembre de 2026. La interpretación del sector, los ejemplos y las relaciones propuestas son elaboración didáctica propia.
+Place the image in `dist/assets/`, then set:
+
+```js
+logo: 'assets/client-logo.svg',
+```
+
+PNG and JPG work too. Paths are relative to `dist/index.html`. Leave `logo: ''` for company initials. A missing image also falls back to initials. The supplied `dist/favicon.svg` is a generic Porter icon; replace it only if a custom browser icon is part of the delivery.
+
+### Customize System Dynamics
+
+Keep `r1`, `b1` and `b2`. Each cycle supports 4 or 5 nodes; each node has exactly two short text lines. `signs[i]` describes the arrow from node `i` to the next node (wrapping at the end). Use `+` or the minus character `−`. `delays` contains zero-based edge indices. Update the `steps` text to match the diagram after editing a cycle.
+
+- **R1 / reinforcing:** an even number of negative links (zero in the demo).
+- **B1 and B2 / balancing:** an odd number of negative links (one in each demo cycle).
+- `+` means same-direction change and `−` means opposite-direction change, all else equal. They do not mean good or bad. `∥` indicates delay.
+- Loop polarity alone does not guarantee growth or stability. These are conceptual hypotheses, not a calibrated simulation.
+
+The app validates the required force keys, basic cycle structure, polarity and recommendation count. It shows a configuration message when these checks fail. Syntax errors in `config.js` must be corrected in that file.
+
+### Print or save as PDF
+
+Click **Export / Print Report**, or use the browser's Print command. Choose **Save as PDF**, A4 and 100% scale. Disable browser-added headers and footers for a clean result; enable background graphics to retain the brand tints.
+
+Navigation and interaction controls are hidden. Company information, executive summary, recommendations, methodology, relationship table, all five force analyses and all three SVG cycles remain. Printing does not change the selected force or cycle. Pagination can differ between browsers and with longer client content; review the preview before delivering.
+
+## Project structure
+
+```text
+index.html                 Entry point / redirect
+README.md                  Setup and customization guide
+.gitignore                 Local/runtime exclusions
+dist/
+  index.html               Accessible interface and generic labels
+  config.js                All client content and branding
+  app.js                   Rendering, validation, navigation and SVG geometry
+  styles.css               Tokens, responsive layouts and print styles
+  favicon.svg              Generic Porter icon
+  assets/                  Local client logos
+```
+
+## Client delivery checklist
+
+1. Replace demo content and verify the company scope and sources.
+2. Check each force, its intensity and its linked loop; check all three cycles.
+3. Keep summary and recommendations consistent with the analysis.
+4. Test the logo offline, keyboard navigation, desktop and a 390px mobile viewport.
+5. Review Print Preview and save a PDF if included in the package.
+6. Deliver the root `index.html`, `dist/` folder and README together, or zip them. No installation files are needed.
+
+## Fiverr packaging
+
+Suggested service: **I will create an interactive Porter Five Forces analysis for your business**.
+
+- **Basic (~US$5):** one company, five forces, name, colors, responsive source code and browser printing. Keep scope clear: client-supplied information, concise customization and a limited revision scope.
+- **Standard:** more detailed drivers, a tailored executive summary, 3–5 recommendations, logo and a reviewed PDF deliverable.
+- **Premium:** customized System Dynamics (R1/B1/B2), causal assumptions, Porter-to-system mapping and deeper evidence-based research.
+
+All three cycles are retained in this template. Packages describe service scope; the code has no paywall or feature locks.
+
+## Validation
+
+Checked in headless Microsoft Edge using direct local files: all force selections and related-loop links, three SVG cycles, keyboard activation, hash navigation/history, root redirect, print trigger, complete print content, unique SVG IDs, and no JavaScript exceptions or external runtime requests. All views were checked at 390, 768, 1280 and 1440px without page-level horizontal overflow. On mobile, diagrams and the relationship table have their own keyboard-focusable scrolling regions, with a text sequence for every loop.
+
+A separate client fixture verified config-only replacement, a local logo, missing-logo fallback, five recommendations, escaped text and alternate branding. Recheck layout and contrast for each client's content; these checks are not a formal accessibility certification.

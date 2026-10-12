@@ -1,75 +1,128 @@
 'use strict';
 
-// Caso académico. Las intensidades y relaciones causales son hipótesis de análisis.
-const forces = {
-  rivalidad: {
-    number: '01', title: 'Rivalidad competitiva', level: 'Alta',
-    description: 'Las plataformas de IA compiten por resolver mejor las mismas tareas, ganar usuarios y convertirse en parte de su trabajo diario.',
-    drivers: ['Servicios con funciones similares facilitan la comparación.', 'Mejorar calidad, velocidad e integración exige inversión continua.', 'Competir solo por precio puede reducir el margen para reinvertir.'],
-    impact: 'Diferenciarse por utilidad y fiabilidad puede sostener el valor del servicio frente a la presión de precios.',
-    loop: 'b2', connection: 'B2 · Presión sobre los márgenes'
-  },
-  entrantes: {
-    number: '02', title: 'Nuevos entrantes', level: 'Media-alta',
-    description: 'La amenaza depende de qué se quiera construir: lanzar una aplicación sobre una API requiere menos recursos que entrenar un modelo de frontera.',
-    drivers: ['Las APIs y los modelos abiertos facilitan nuevos servicios.', 'El entrenamiento de frontera exige mucho capital y cómputo.', 'La confianza, la distribución y la integración dificultan escalar.'],
-    impact: 'La entrada puede intensificar la competencia en aplicaciones, aunque persistan barreras elevadas en la infraestructura y los modelos.',
-    loop: 'b2', connection: 'B2 · Atractivo y nueva oferta'
-  },
-  proveedores: {
-    number: '03', title: 'Poder de los proveedores', level: 'Alta',
-    description: 'El acceso a cómputo, servicios de nube, modelos, datos autorizados y talento especializado condiciona la prestación del servicio.',
-    drivers: ['Depender de pocos proveedores reduce las alternativas.', 'Cambiar de infraestructura o de modelo puede ser costoso.', 'Los costes y la capacidad contratada condicionan el crecimiento.'],
-    impact: 'Optimizar el cómputo y contar con alternativas viables puede reducir la dependencia y anticipar restricciones de capacidad.',
-    loop: 'b1', connection: 'B1 · Límite de infraestructura'
-  },
-  clientes: {
-    number: '04', title: 'Poder de los clientes', level: 'Media-alta',
-    description: 'Los compradores comparan utilidad, precio, privacidad y fiabilidad. Su poder varía según el volumen contratado y la facilidad de cambiar.',
-    drivers: ['Los grandes contratos dan más capacidad de negociación.', 'Las opciones similares favorecen la comparación de precios.', 'La integración y la migración de datos pueden dificultar cambiar.'],
-    impact: 'Demostrar resultados y ofrecer portabilidad e integración puede fortalecer la relación con clientes sin depender solo del descuento.',
-    loop: 'b2', connection: 'B2 · Precio y valor percibido'
-  },
-  sustitutos: {
-    number: '05', title: 'Amenaza de sustitutos', level: 'Media',
-    description: 'Una misma necesidad puede resolverse con software de reglas, búsqueda tradicional, automatización convencional o trabajo humano especializado.',
-    drivers: ['Las tareas estables pueden resolverse con reglas simples.', 'La supervisión humana puede ser preferible en tareas delicadas.', 'El coste total y la fiabilidad determinan qué alternativa conviene.'],
-    impact: 'El servicio de IA debe aportar una mejora verificable frente a otras formas de resolver la tarea. Otra marca de IA suele ser un rival, no un sustituto.',
-    loop: 'b2', connection: 'B2 · Alternativas y valor relativo'
-  }
-};
+(() => {
+try {
+if (typeof projectConfig === 'undefined') throw new Error('dist/config.js could not be loaded.');
+const forceKeys = ['rivalidad', 'entrantes', 'proveedores', 'clientes', 'sustitutos'];
+const loopKeys = ['r1', 'b1', 'b2'];
+const escapeText = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char]));
+const hasText = value => typeof value === 'string' && value.trim().length > 0;
+// Escape client text once before using it in HTML/SVG templates. Keep the original
+// config untouched for textContent, URLs and branding validation.
+function escaped(value) {
+  if (typeof value === 'string') return escapeText(value);
+  if (Array.isArray(value)) return value.map(escaped);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, escaped(item)]));
+  return value;
+}
+for (const key of forceKeys) {
+  const force = projectConfig.forces?.[key];
+  const fields = ['number', 'title', 'level', 'subtitle', 'example', 'description', 'impact', 'connection', 'mechanism', 'relationship'];
+  if (!force || fields.some(field => !hasText(force[field])) || !Array.isArray(force.drivers) || !force.drivers.length || !force.drivers.every(hasText) || !loopKeys.includes(force.loop)) throw new Error(`Check forces.${key}: text fields, drivers and loop in config.js.`);
+}
+for (const key of loopKeys) {
+  const loop = projectConfig.dynamics?.loops?.[key];
+  const fields = ['code', 'type', 'name', 'short', 'description', 'hypothesis'];
+  if (!loop || fields.some(field => !hasText(loop[field])) || !Array.isArray(loop.nodes) || ![4, 5].includes(loop.nodes.length) || loop.nodes.some(node => !Array.isArray(node) || node.length !== 2 || !node.every(hasText)) || !Array.isArray(loop.signs) || loop.signs.length !== loop.nodes.length || !loop.signs.every(sign => ['+', '−'].includes(sign)) || !Array.isArray(loop.steps) || loop.steps.length !== loop.nodes.length || !loop.steps.every(hasText) || !Array.isArray(loop.delays) || loop.delays.some(i => !Number.isInteger(i) || i < 0 || i >= loop.nodes.length)) throw new Error(`Check dynamics.loops.${key}: labels, nodes, signs, steps and delays in config.js.`);
+  const negative = loop.signs.filter(sign => sign === '−').length;
+  if (negative % 2 !== (key === 'r1' ? 0 : 1)) throw new Error(`Loop polarity is inconsistent in ${key}.`);
+}
+if (!projectConfig.company || ['name', 'industry', 'country', 'date', 'description'].some(field => !hasText(projectConfig.company[field])) || typeof projectConfig.company.logo !== 'string') throw new Error('Check company name, industry, country, date, description and logo in config.js.');
+if (!projectConfig.branding || Object.values(projectConfig.branding).some(color => typeof color !== 'string' || !/^#[0-9a-f]{6}$/i.test(color))) throw new Error('Use six-digit hex colors in branding in config.js.');
+if (!projectConfig.executiveSummary || ['overallPressure', 'strongestForce', 'mainRisk', 'mainOpportunity', 'strategicPriority'].some(field => !hasText(projectConfig.executiveSummary[field]))) throw new Error('Check executiveSummary in config.js.');
+if (!Array.isArray(projectConfig.recommendations) || projectConfig.recommendations.length < 3 || projectConfig.recommendations.length > 5 || projectConfig.recommendations.some(item => !item || !hasText(item.title) || !hasText(item.description))) throw new Error('Use 3–5 recommendations with a title and description in config.js.');
+if (['title', 'description', 'intervention'].some(field => !hasText(projectConfig.dynamics[field]))) throw new Error('Check dynamics title, description and intervention in config.js.');
+if (!projectConfig.methodology || !hasText(projectConfig.methodology.scope) || !hasText(projectConfig.methodology.note) || !Array.isArray(projectConfig.methodology.sources) || projectConfig.methodology.sources.some(source => !source || !hasText(source.title) || !hasText(source.description) || typeof source.url !== 'string')) throw new Error('Check methodology scope, note and sources in config.js.');
+const config = escaped(projectConfig);
+const forces = config.forces;
+const loops = config.dynamics.loops;
+for (const key of loopKeys) {
+  loops[key].color = key === 'r1' ? 'var(--green)' : 'var(--accent-dark)';
+  loops[key].soft = key === 'r1' ? 'var(--green-soft)' : 'var(--accent-soft)';
+}
 
-// Signos por arista: nodes[i] -> nodes[(i + 1) % nodes.length].
-// R1 tiene cero relaciones negativas; B1 y B2 tienen una negativa cada uno.
-const loops = {
-  r1: {
-    code: 'R1', type: 'refuerzo', name: 'Innovación que se refuerza', short: 'Crecimiento', color: '#176c59', soft: '#eaf5f0',
-    nodes: [['Adopción del', 'servicio'], ['Ingresos', 'disponibles'], ['Reinversión en', 'mejora'], ['Valor percibido', 'del servicio']],
-    signs: ['+', '+', '+', '+'], delays: [2],
-    description: 'Más adopción puede generar ingresos para mejorar el servicio. Si las mejoras aportan valor, favorecen a su vez la adopción.',
-    steps: ['Adopción → ingresos (+).', 'Ingresos → reinversión (+).', 'Reinversión → valor percibido (+, con demora).', 'Valor percibido → adopción (+).'],
-    hypothesis: 'Se supone un servicio monetizado, un margen positivo y reinversión efectiva. Más usuarios no generan ingresos ni mejoras automáticamente.'
-  },
-  b1: {
-    code: 'B1', type: 'equilibrio', name: 'El límite de la capacidad', short: 'Capacidad', color: '#b73410', soft: '#fff0e9',
-    nodes: [['Adopción del', 'servicio'], ['Carga de', 'infraestructura'], ['Saturación de', 'capacidad'], ['Calidad del', 'servicio']],
-    signs: ['+', '+', '−', '+'], delays: [],
-    description: 'Si crece el uso sin ampliar capacidad, aumenta la saturación. Un servicio más lento o menos disponible puede frenar la adopción.',
-    steps: ['Adopción → carga de infraestructura (+).', 'Carga → saturación (+).', 'Saturación → calidad del servicio (−).', 'Calidad → adopción (+).'],
-    hypothesis: 'La capacidad se considera fija a corto plazo. Ampliarla requiere tiempo; el coste y la disponibilidad de proveedores condicionan esa respuesta.'
-  },
-  b2: {
-    code: 'B2', type: 'equilibrio', name: 'La presión de competir', short: 'Competencia', color: '#b73410', soft: '#fff0e9',
-    nodes: [['Adopción del', 'servicio'], ['Atractivo del', 'mercado'], ['Presión', 'competitiva'], ['Margen', 'reinvertible'], ['Mejora del', 'valor relativo']],
-    signs: ['+', '+', '−', '+', '+'], delays: [1, 3],
-    description: 'La expansión puede atraer oferta. La presión competitiva puede reducir el margen disponible para mejorar el servicio y sostener su adopción.',
-    steps: ['Adopción → atractivo del mercado (+).', 'Atractivo → presión competitiva (+, con demora).', 'Presión → margen reinvertible (−).', 'Margen → mejora del valor relativo (+, con demora).', 'Valor relativo → adopción (+).'],
-    hypothesis: 'La adopción del servicio se usa como señal del crecimiento de su segmento. La presión recoge entrada y rivalidad; clientes y sustitutos pueden intensificarla. Es una simplificación, no una ley universal.'
+function safeURL(value, image = false) {
+  if (!value) return '';
+  try {
+    const url = new URL(value, location.href);
+    return (image ? ['file:', 'http:', 'https:'] : ['http:', 'https:']).includes(url.protocol) ? url.href : '';
+  } catch { return ''; }
+}
+
+function initialize() {
+  const company = projectConfig.company;
+  document.title = `${company.name} | Porter Five Forces Analysis`;
+  document.querySelector('meta[name="description"]').content = company.description;
+  document.querySelectorAll('[data-company]').forEach(el => { el.textContent = company.name; });
+  document.getElementById('company-meta').textContent = [company.industry, company.country, company.date].filter(Boolean).join(' · ');
+  document.getElementById('company-description').textContent = company.description;
+  const logo = document.getElementById('company-logo');
+  const mark = document.getElementById('brand-mark');
+  mark.textContent = company.name.split(/\s+/).map(word => word[0]).slice(0, 2).join('');
+  const logoURL = safeURL(company.logo, true);
+  if (logoURL) {
+    logo.onload = () => { logo.hidden = false; mark.hidden = true; };
+    logo.onerror = () => { logo.hidden = true; mark.hidden = false; };
+    logo.src = logoURL;
   }
-};
+  const tokens = {primaryColor: '--primary', secondaryColor: '--secondary', backgroundColor: '--background', surfaceColor: '--surface', textColor: '--text', mutedColor: '--muted'};
+  for (const [key, token] of Object.entries(tokens)) {
+    const color = projectConfig.branding?.[key];
+    if (color && /^#[0-9a-f]{6}$/i.test(color)) document.documentElement.style.setProperty(token, color);
+  }
+  // Pick readable ink for solid brand fills, including light client palettes.
+  const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+  const rgb = primary.match(/[0-9a-f]{2}/gi).map(hex => parseInt(hex, 16) / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+  const luminance = .2126 * rgb[0] + .7152 * rgb[1] + .0722 * rgb[2];
+  document.documentElement.style.setProperty('--on-primary', luminance > .179 ? '#181b1f' : '#ffffff');
+  document.querySelector('meta[name="theme-color"]').content = primary;
+  const summary = config.executiveSummary;
+  document.getElementById('summary-grid').innerHTML = [['Overall Competitive Pressure', summary.overallPressure], ['Strongest Force', summary.strongestForce], ['Main Risk', summary.mainRisk], ['Main Opportunity', summary.mainOpportunity]].map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('');
+  document.getElementById('strategic-priority').innerHTML = `<strong>Strategic Priority</strong><span>${summary.strategicPriority}</span>`;
+  document.getElementById('recommendation-list').innerHTML = config.recommendations.map((item, i) => `<li><span class="recommendation-number">0${i + 1}</span><div><h3>${item.title}</h3><p>${item.description}</p></div></li>`).join('');
+  document.getElementById('force-map').innerHTML = `<svg class="force-connections" viewBox="0 0 900 570" preserveAspectRatio="none" aria-hidden="true"><defs><marker id="map-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L8 5 L0 9" fill="none" stroke="currentColor" stroke-width="1.5"/></marker></defs><path d="M450 177 V197"/><path d="M270 285 H315"/><path d="M630 285 H585"/><path d="M450 402 V386"/></svg>` + forceKeys.map(key => {
+    const force = forces[key];
+    return `<button class="force-card force-${key}" data-force="${key}" type="button" aria-pressed="false" aria-controls="force-detail"><span class="card-top"><span class="node-number">${force.number}</span><span class="level">${force.level}</span></span><span class="node-title">${force.title}</span><span class="node-subtitle">${force.subtitle}</span><span class="node-example">${force.example}</span></button>`;
+  }).join('');
+  document.getElementById('loop-selector').innerHTML = loopKeys.map(key => `<button type="button" class="loop-button" data-loop="${key}" aria-pressed="false" aria-controls="causal-diagram loop-detail"><span class="loop-badge ${key === 'r1' ? 'reinforce' : 'balance'}">${loops[key].code}</span>${loops[key].short}</button>`).join('');
+  for (const field of ['title', 'description', 'intervention']) document.getElementById(`dynamics-${field}`).textContent = projectConfig.dynamics[field];
+  document.getElementById('connections-body').innerHTML = forceKeys.map(key => `<tr><th scope="row">${forces[key].title}</th><td>${forces[key].mechanism}</td><td>${forces[key].relationship}</td></tr>`).join('');
+  document.getElementById('method-scope').textContent = projectConfig.methodology.scope;
+  document.getElementById('method-note').textContent = projectConfig.methodology.note;
+  document.getElementById('sources').innerHTML = config.methodology.sources.map((source, i) => {
+    const url = safeURL(projectConfig.methodology.sources[i].url);
+    const content = `<span>0${i + 1} · REFERENCE<strong>${source.title}</strong><small>${source.description}</small></span>`;
+    return url ? `<a class="source-link" href="${escapeText(url)}" target="_blank" rel="noopener noreferrer">${content}<span aria-hidden="true">↗</span></a>` : `<div class="source-link">${content}</div>`;
+  }).join('');
+  // Build a complete print document once; printing never changes the active view.
+  const report = document.getElementById('print-analysis');
+  report.innerHTML = '<h2>Five Forces · Complete Analysis</h2>';
+  for (const key of forceKeys) {
+    renderForce(key);
+    const article = document.createElement('article');
+    article.className = 'print-force';
+    article.innerHTML = document.getElementById('force-detail').innerHTML;
+    article.querySelector('button').remove();
+    report.append(article);
+  }
+  report.insertAdjacentHTML('beforeend', '<h2>System Dynamics · All Feedback Loops</h2>');
+  for (const key of loopKeys) {
+    report.insertAdjacentHTML('beforeend', `<article class="print-loop"><div class="causal-diagram" id="print-diagram-${key}"></div><div class="loop-detail" id="print-detail-${key}"></div></article>`);
+    renderLoop(key, `print-diagram-${key}`, `print-detail-${key}`, false);
+  }
+  const context = document.createElement('section');
+  context.className = 'print-context';
+  for (const selector of ['.system-heading', '.system-key', '.connections-section', '.synthesis-grid']) {
+    const clone = document.querySelector(selector).cloneNode(true);
+    clone.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+    clone.querySelectorAll('[tabindex]').forEach(element => element.removeAttribute('tabindex'));
+    context.append(clone);
+  }
+  report.append(context);
+  document.getElementById('print-report').addEventListener('click', () => window.print());
+}
 
 const viewNames = ['fuerzas', 'sistema', 'sintesis'];
-let currentView = 'fuerzas';
 let currentLoop = 'r1';
 
 function renderForce(key) {
@@ -81,12 +134,12 @@ function renderForce(key) {
     button.setAttribute('aria-pressed', String(selected));
   });
   document.getElementById('force-detail').innerHTML = `
-    <div class="detail-kicker">EXPLORAR FUERZA <span class="detail-index">${force.number} / 05</span></div>
+    <div class="detail-kicker">EXPLORE FORCE <span class="detail-index">${force.number} / 05</span></div>
     <h2>${force.title}</h2>
-    <div class="detail-level"><span>Intensidad propuesta</span><strong>${force.level}</strong></div>
+    <div class="detail-level"><span>Assessed intensity</span><strong>${force.level}</strong></div>
     <p class="detail-description">${force.description}</p>
-    <div class="detail-section"><h3>¿Qué la impulsa?</h3><ul>${force.drivers.map(item => `<li>${item}</li>`).join('')}</ul></div>
-    <div class="impact-block"><h3>IMPLICACIÓN ESTRATÉGICA</h3><p>${force.impact}</p></div>
+    <div class="detail-section"><h3>Key Drivers</h3><ul>${force.drivers.map(item => `<li>${item}</li>`).join('')}</ul></div>
+    <div class="impact-block"><h3>STRATEGIC IMPACT</h3><p>${force.impact}</p></div>
     <button type="button" class="detail-system-link" data-related-loop="${force.loop}">${force.connection}<span aria-hidden="true">↗</span></button>`;
 }
 
@@ -97,11 +150,11 @@ function rectangleEdge(center, towards, halfWidth = 103, halfHeight = 36) {
   return {x: center.x + dx * ratio, y: center.y + dy * ratio};
 }
 
-function renderLoop(key) {
+function renderLoop(key, diagramId = 'causal-diagram', detailId = 'loop-detail', interactive = true) {
   const loop = loops[key];
   if (!loop) return;
-  currentLoop = key;
-  document.querySelectorAll('[data-loop]').forEach(button => {
+  if (interactive) currentLoop = key;
+  if (interactive) document.querySelectorAll('[data-loop]').forEach(button => {
     const selected = button.dataset.loop === key;
     button.classList.toggle('active', selected);
     button.setAttribute('aria-pressed', String(selected));
@@ -120,20 +173,19 @@ function renderLoop(key) {
     const middle = {x: 0.25 * start.x + 0.5 * control.x + 0.25 * end.x, y: 0.25 * start.y + 0.5 * control.y + 0.25 * end.y};
     const signX = end.x * 0.77 + control.x * 0.23;
     const signY = end.y * 0.77 + control.y * 0.23;
-    return `<path d="M${start.x},${start.y} Q${control.x},${control.y} ${end.x},${end.y}" fill="none" stroke="${loop.color}" stroke-width="2" marker-end="url(#causal-arrow)"/>
-      <circle cx="${signX}" cy="${signY}" r="12" fill="#f5f7f8"/>
+    return `<path d="M${start.x},${start.y} Q${control.x},${control.y} ${end.x},${end.y}" fill="none" stroke="${loop.color}" stroke-width="2" marker-end="url(#${diagramId}-arrow)"/>
+      <circle cx="${signX}" cy="${signY}" r="12" fill="var(--canvas)"/>
       <text x="${signX}" y="${signY + 6}" text-anchor="middle" style="fill:${loop.color}" font-size="23" font-weight="700">${loop.signs[index]}</text>
-      ${loop.delays.includes(index) ? `<circle cx="${middle.x}" cy="${middle.y}" r="16" fill="#f5f7f8"/><text x="${middle.x}" y="${middle.y + 7}" text-anchor="middle" font-size="25" style="fill:${loop.color}">∥</text>` : ''}`;
+      ${loop.delays.includes(index) ? `<circle cx="${middle.x}" cy="${middle.y}" r="16" fill="var(--canvas)"/><text x="${middle.x}" y="${middle.y + 7}" text-anchor="middle" font-size="25" style="fill:${loop.color}">∥</text>` : ''}`;
   }).join('');
-  const nodes = points.map((point, index) => `<g><rect x="${point.x - 103}" y="${point.y - 36}" width="206" height="72" rx="10" fill="${index === 0 ? loop.soft : '#fff'}" stroke="${index === 0 ? loop.color : '#d4dade'}" stroke-width="${index === 0 ? 1.8 : 1}"/>
+  const nodes = points.map((point, index) => `<g><rect x="${point.x - 103}" y="${point.y - 36}" width="206" height="72" rx="10" fill="${index === 0 ? loop.soft : 'var(--paper)'}" stroke="${index === 0 ? loop.color : 'var(--line)'}" stroke-width="${index === 0 ? 1.8 : 1}"/>
     <text text-anchor="middle" font-size="17" font-weight="600"><tspan x="${point.x}" y="${point.y - 4}">${point.label[0]}</tspan><tspan x="${point.x}" y="${point.y + 19}">${point.label[1]}</tspan></text></g>`).join('');
-  document.getElementById('causal-diagram').innerHTML = `<svg viewBox="0 0 920 540" role="img" aria-labelledby="loop-svg-title loop-svg-desc"><title id="loop-svg-title">${loop.code}: ${loop.name}</title><desc id="loop-svg-desc">Ciclo de ${loop.type}. ${loop.steps.join(' ')} Las flechas se leen en sentido horario. Los ciclos comparten la variable adopción del servicio.</desc><defs><marker id="causal-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="${loop.color}"/></marker></defs>${edges}${nodes}<circle cx="460" cy="247" r="34" fill="${loop.soft}" stroke="${loop.color}" stroke-opacity=".2"/><text x="460" y="257" font-size="28" text-anchor="middle" font-weight="700" style="fill:${loop.color}">${loop.code}</text><text x="460" y="310" text-anchor="middle" font-size="18" font-weight="650">${loop.short}</text><text x="460" y="335" text-anchor="middle" font-size="14" style="fill:#6c757c">Ciclo de ${loop.type}</text></svg>`;
-  document.getElementById('loop-detail').innerHTML = `<div class="loop-kind"><span class="loop-badge ${key === 'r1' ? 'reinforce' : 'balance'}">${loop.code}</span>CICLO DE ${loop.type.toUpperCase()}</div><h3>${loop.name}</h3><p>${loop.description}</p><ol class="loop-trace">${loop.steps.map(step => `<li>${step}</li>`).join('')}</ol><div class="hypothesis"><strong>Supuesto del modelo</strong><p>${loop.hypothesis}</p></div>`;
+  document.getElementById(diagramId).innerHTML = `<svg viewBox="0 0 920 540" role="img" aria-labelledby="${diagramId}-title ${diagramId}-desc"><title id="${diagramId}-title">${loop.code}: ${loop.name}</title><desc id="${diagramId}-desc">Loop: ${loop.type}. ${loop.steps.join(' ')} Read arrows clockwise. All cycles share service adoption.</desc><defs><marker id="${diagramId}-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="${loop.color}"/></marker></defs>${edges}${nodes}<circle cx="460" cy="247" r="34" fill="${loop.soft}" stroke="${loop.color}" stroke-opacity=".2"/><text x="460" y="257" font-size="28" text-anchor="middle" font-weight="700" style="fill:${loop.color}">${loop.code}</text><text x="460" y="310" text-anchor="middle" font-size="18" font-weight="650">${loop.short}</text><text x="460" y="335" text-anchor="middle" font-size="14" style="fill:var(--muted)">Loop: ${loop.type}</text></svg>`;
+  document.getElementById(detailId).innerHTML = `<div class="loop-kind"><span class="loop-badge ${key === 'r1' ? 'reinforce' : 'balance'}">${loop.code}</span>LOOP: ${loop.type.toUpperCase()}</div><h3>${loop.name}</h3><p>${loop.description}</p><ol class="loop-trace">${loop.steps.map(step => `<li>${step}</li>`).join('')}</ol><div class="hypothesis"><strong>Model assumption</strong><p>${loop.hypothesis}</p></div>`;
 }
 
 function setView(name, writeHash = true, focusHeading = false) {
   if (!viewNames.includes(name)) return;
-  currentView = name;
   document.querySelectorAll('.view').forEach(view => { view.hidden = view.id !== `view-${name}`; });
   document.querySelectorAll('[data-view]').forEach(button => {
     const active = button.dataset.view === name;
@@ -153,7 +205,7 @@ document.addEventListener('click', event => {
   if (!target) return;
   if (target.dataset.force) renderForce(target.dataset.force);
   if (target.dataset.view) setView(target.dataset.view);
-  if (target.dataset.go) setView(target.dataset.go, true, true);
+  if (target.dataset.go) { setView(target.dataset.go, true, true); document.getElementById(`view-${target.dataset.go}`).scrollIntoView({block: 'start'}); }
   if (target.dataset.loop) renderLoop(target.dataset.loop);
   if (target.dataset.relatedLoop) {
     renderLoop(target.dataset.relatedLoop);
@@ -166,10 +218,15 @@ window.addEventListener('hashchange', () => {
   setView(viewNames.includes(name) ? name : 'fuerzas', false);
 });
 
+initialize();
 renderForce('rivalidad');
 renderLoop(currentLoop);
 setView(viewNames.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'fuerzas', false);
 
-const repositoryLink = document.getElementById('repo-link');
-repositoryLink.href = 'https://github.com/Rodrix836/Avance-2-de-tic';
-repositoryLink.hidden = false;
+} catch (error) {
+  const message = document.getElementById('config-error');
+  message.textContent = `The dashboard configuration could not be loaded. ${error.message}`;
+  message.hidden = false;
+  console.error(error);
+}
+})();
