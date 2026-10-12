@@ -1,4 +1,4 @@
-# Avance-2-de-tic
+# PORTER IA
 
 ## Porter IA · Arquetipo sistémico
 
