@@ -6,6 +6,7 @@ if (typeof projectConfig === 'undefined') throw new Error('dist/config.js could 
 const forceKeys = ['rivalidad', 'entrantes', 'proveedores', 'clientes', 'sustitutos'];
 const loopKeys = ['r1', 'b1', 'b2'];
 const escapeText = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char]));
+const hasText = value => typeof value === 'string' && value.trim().length > 0;
 // Escape client text once before using it in HTML/SVG templates. Keep the original
 // config untouched for textContent, URLs and branding validation.
 function escaped(value) {
@@ -16,15 +17,22 @@ function escaped(value) {
 }
 for (const key of forceKeys) {
   const force = projectConfig.forces?.[key];
-  if (!force || !force.title || !force.level || !Array.isArray(force.drivers) || !loopKeys.includes(force.loop)) throw new Error(`Check forces.${key} in config.js.`);
+  const fields = ['number', 'title', 'level', 'subtitle', 'example', 'description', 'impact', 'connection', 'mechanism', 'relationship'];
+  if (!force || fields.some(field => !hasText(force[field])) || !Array.isArray(force.drivers) || !force.drivers.length || !force.drivers.every(hasText) || !loopKeys.includes(force.loop)) throw new Error(`Check forces.${key}: text fields, drivers and loop in config.js.`);
 }
 for (const key of loopKeys) {
   const loop = projectConfig.dynamics?.loops?.[key];
-  if (!loop || ![4, 5].includes(loop.nodes?.length) || loop.nodes.some(node => !Array.isArray(node) || node.length !== 2) || loop.signs?.length !== loop.nodes.length || !loop.signs.every(sign => ['+', '−'].includes(sign)) || !Array.isArray(loop.steps) || !Array.isArray(loop.delays) || loop.delays.some(i => !Number.isInteger(i) || i < 0 || i >= loop.nodes.length)) throw new Error(`Check dynamics.loops.${key} in config.js.`);
+  const fields = ['code', 'type', 'name', 'short', 'description', 'hypothesis'];
+  if (!loop || fields.some(field => !hasText(loop[field])) || !Array.isArray(loop.nodes) || ![4, 5].includes(loop.nodes.length) || loop.nodes.some(node => !Array.isArray(node) || node.length !== 2 || !node.every(hasText)) || !Array.isArray(loop.signs) || loop.signs.length !== loop.nodes.length || !loop.signs.every(sign => ['+', '−'].includes(sign)) || !Array.isArray(loop.steps) || loop.steps.length !== loop.nodes.length || !loop.steps.every(hasText) || !Array.isArray(loop.delays) || loop.delays.some(i => !Number.isInteger(i) || i < 0 || i >= loop.nodes.length)) throw new Error(`Check dynamics.loops.${key}: labels, nodes, signs, steps and delays in config.js.`);
   const negative = loop.signs.filter(sign => sign === '−').length;
   if (negative % 2 !== (key === 'r1' ? 0 : 1)) throw new Error(`Loop polarity is inconsistent in ${key}.`);
 }
-if (!projectConfig.company?.name || !projectConfig.executiveSummary || !projectConfig.methodology || !Array.isArray(projectConfig.recommendations) || projectConfig.recommendations.length < 3 || projectConfig.recommendations.length > 5) throw new Error('Check company, executiveSummary, methodology and 3–5 recommendations in config.js.');
+if (!projectConfig.company || ['name', 'industry', 'country', 'date', 'description'].some(field => !hasText(projectConfig.company[field])) || typeof projectConfig.company.logo !== 'string') throw new Error('Check company name, industry, country, date, description and logo in config.js.');
+if (!projectConfig.branding || Object.values(projectConfig.branding).some(color => typeof color !== 'string' || !/^#[0-9a-f]{6}$/i.test(color))) throw new Error('Use six-digit hex colors in branding in config.js.');
+if (!projectConfig.executiveSummary || ['overallPressure', 'strongestForce', 'mainRisk', 'mainOpportunity', 'strategicPriority'].some(field => !hasText(projectConfig.executiveSummary[field]))) throw new Error('Check executiveSummary in config.js.');
+if (!Array.isArray(projectConfig.recommendations) || projectConfig.recommendations.length < 3 || projectConfig.recommendations.length > 5 || projectConfig.recommendations.some(item => !item || !hasText(item.title) || !hasText(item.description))) throw new Error('Use 3–5 recommendations with a title and description in config.js.');
+if (['title', 'description', 'intervention'].some(field => !hasText(projectConfig.dynamics[field]))) throw new Error('Check dynamics title, description and intervention in config.js.');
+if (!projectConfig.methodology || !hasText(projectConfig.methodology.scope) || !hasText(projectConfig.methodology.note) || !Array.isArray(projectConfig.methodology.sources) || projectConfig.methodology.sources.some(source => !source || !hasText(source.title) || !hasText(source.description) || typeof source.url !== 'string')) throw new Error('Check methodology scope, note and sources in config.js.');
 const config = escaped(projectConfig);
 const forces = config.forces;
 const loops = config.dynamics.loops;
@@ -81,9 +89,9 @@ function initialize() {
   document.getElementById('connections-body').innerHTML = forceKeys.map(key => `<tr><th scope="row">${forces[key].title}</th><td>${forces[key].mechanism}</td><td>${forces[key].relationship}</td></tr>`).join('');
   document.getElementById('method-scope').textContent = projectConfig.methodology.scope;
   document.getElementById('method-note').textContent = projectConfig.methodology.note;
-  document.getElementById('sources').innerHTML = (projectConfig.methodology.sources || []).map((source, i) => {
-    const url = safeURL(source.url);
-    const content = `<span>0${i + 1} · REFERENCE<strong>${escapeText(source.title)}</strong><small>${escapeText(source.description)}</small></span>`;
+  document.getElementById('sources').innerHTML = config.methodology.sources.map((source, i) => {
+    const url = safeURL(projectConfig.methodology.sources[i].url);
+    const content = `<span>0${i + 1} · REFERENCE<strong>${source.title}</strong><small>${source.description}</small></span>`;
     return url ? `<a class="source-link" href="${escapeText(url)}" target="_blank" rel="noopener noreferrer">${content}<span aria-hidden="true">↗</span></a>` : `<div class="source-link">${content}</div>`;
   }).join('');
   // Build a complete print document once; printing never changes the active view.
